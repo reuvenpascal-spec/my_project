@@ -1,0 +1,11 @@
+{
+    "default_message": "Welcome to My Project!",
+    "logging": {
+        "file": "app.log",
+        "retention_days": 7
+    },
+    "processing": {
+        "max_length": 1000,
+        "allowed_operations": ["uppercase", "lowercase", "trim"]
+    }
+}
