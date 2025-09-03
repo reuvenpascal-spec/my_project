@@ -4,6 +4,7 @@ import logging
 import json
 from pathlib import Path
 from datetime import datetime
+from text_processor import TextProcessor
 
 def setup_logging(level=logging.INFO):
     """
@@ -35,35 +36,52 @@ def load_config(config_path: str = 'config.json') -> dict:
     except FileNotFoundError:
         return {"default_message": "Hello from My Project!"}
 
-def process_data(data: str, logger: logging.Logger) -> str:
+def process_data(data: str, operation: str, logger: logging.Logger) -> str:
     """
-    Process the input data.
+    Process the input data using the specified operation.
     
     Args:
         data: Input string to process
+        operation: Name of the operation to perform
         logger: Logger instance
     
     Returns:
         str: Processed data
     """
-    logger.info(f"Processing data: {data}")
-    # Add your data processing logic here
-    processed = data.upper()
-    logger.info("Data processing completed")
-    return processed
+    logger.info(f"Processing data with operation: {operation}")
+    
+    processor = TextProcessor()
+    operations = processor.get_available_operations()
+    
+    if operation not in operations:
+        available_ops = ', '.join(operations.keys())
+        logger.error(f"Invalid operation. Available operations: {available_ops}")
+        return f"Error: Invalid operation. Available operations: {available_ops}"
+    
+    try:
+        result = operations[operation](data)
+        logger.info("Data processing completed successfully")
+        return result
+    except Exception as e:
+        logger.error(f"Error processing data: {str(e)}")
+        return f"Error: {str(e)}"
 
 def main():
     """
     Main entry point for the application.
     """
     # Set up argument parser
-    parser = argparse.ArgumentParser(description='My Project CLI')
+    parser = argparse.ArgumentParser(description='Text Processing CLI')
     parser.add_argument('--config', type=str, default='config.json',
                        help='Path to configuration file')
     parser.add_argument('--debug', action='store_true',
                        help='Enable debug logging')
     parser.add_argument('--input', type=str,
-                       help='Input data to process')
+                       help='Input text to process')
+    parser.add_argument('--operation', type=str, default='uppercase',
+                       help='Text operation to perform')
+    parser.add_argument('--list-operations', action='store_true',
+                       help='List available text operations')
     
     args = parser.parse_args()
     
@@ -75,13 +93,25 @@ def main():
     config = load_config(args.config)
     logger.debug(f"Loaded configuration: {config}")
     
+    # List available operations if requested
+    if args.list_operations:
+        operations = TextProcessor.get_available_operations().keys()
+        print("\nAvailable operations:")
+        for op in operations:
+            print(f"  - {op}")
+        return
+    
     if args.input:
         # Process input data
-        result = process_data(args.input, logger)
-        print(f"Processed result: {result}")
+        result = process_data(args.input, args.operation, logger)
+        print(f"\nInput: {args.input}")
+        print(f"Operation: {args.operation}")
+        print(f"Result: {result}")
     else:
         # Display default message
         print(config.get('default_message', 'Hello!'))
+        print("\nUse --input to provide text for processing")
+        print("Use --list-operations to see available operations")
         
     logger.info("Application completed successfully")
 
